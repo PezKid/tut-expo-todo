@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Checkbox } from 'expo-checkbox';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FlatList, Image, Keyboard, KeyboardAvoidingView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Confetti, ConfettiMethods } from 'react-native-fast-confetti';
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 type TodoType = {
@@ -13,10 +14,13 @@ type TodoType = {
 
 export default function Index() {
 
+  const confettiRef = useRef<ConfettiMethods>(null);
+
   const [todos, setTodos] = useState<TodoType[]>([]);
   const [oldTodos, setOldTodos] = useState<TodoType[]>([]);
   const [todoText, setTodoText] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [allDone, setAllDone] = useState<Boolean>(false);
 
   useEffect(() => {
     const getTodos = async () => {
@@ -45,6 +49,7 @@ export default function Index() {
       setOldTodos(oldTodos);
       await AsyncStorage.setItem('my-todo', JSON.stringify(todos));
       setTodoText('');
+      setAllDone(false);
       Keyboard.dismiss();
       onSearch(searchQuery);
     } catch (error) {
@@ -69,6 +74,11 @@ export default function Index() {
       const newTodos = todos.map((todo) => {
         if (todo.id === id) {
           todo.isDone = !todo.isDone;
+          if (!todo.isDone) {
+            setAllDone(false);
+          } else {
+            checkAllDone();
+          }
         }
         return todo;
       });
@@ -91,11 +101,25 @@ export default function Index() {
 
   useEffect(() => {onSearch(searchQuery)}, [searchQuery]);
 
+  const checkAllDone = () => {
+    if (!allDone) {
+      const done = todos.every(item => item.isDone);
+      setAllDone(done);
+      if (done) {
+        spawnConfetti();
+      }
+    }
+  }
+
+  const spawnConfetti = () => {
+    confettiRef.current?.restart();
+  }
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => {alert('clicked')}}>
+          <TouchableOpacity onPress={() => {}}>
             <Ionicons name="menu" size={24} color={"#333"}/>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => {}}>
@@ -105,6 +129,8 @@ export default function Index() {
             />
           </TouchableOpacity>
         </View>
+
+        <Confetti ref={confettiRef} autoplay={false} fadeOutOnEnd={true} />
 
         <View style={styles.searchBar}>
           <Ionicons name='search' size={24} color={'#333'}/>
