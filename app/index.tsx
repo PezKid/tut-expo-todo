@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Checkbox } from 'expo-checkbox';
+import { useState } from 'react';
 import { FlatList, Image, KeyboardAvoidingView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
@@ -15,11 +16,22 @@ export default function Index() {
     { id: 1, title: "Todo 1", isDone: false, },
     { id: 2, title: "Todo 2", isDone: false, },
     { id: 3, title: "Todo 3", isDone: false, },
-    { id: 4, title: "Todo 4", isDone: true, },
-    { id: 5, title: "Todo 5", isDone: false, },
-    { id: 6, title: "Todo 6", isDone: false, },
-    { id: 7, title: "Todo 7", isDone: false, },
-  ]
+  ];
+
+  const [todos, setTodos] = useState<TodoType[]>(todoData);
+  const [todoText, setTodoText] = useState<string>('');
+
+  const addTodo = () => {
+    const newTodo: TodoType = {
+      id: Math.random(),
+      title: todoText,
+      isDone: false,
+    };
+
+    todos.push(newTodo);
+    setTodos(todos);
+    setTodoText('');
+  }
 
   return (
     <SafeAreaProvider>
@@ -42,16 +54,25 @@ export default function Index() {
         </View>
 
         <FlatList
-          data={todoData}
+          data={[...todos].reverse()}
           renderItem={({ item }) => (
             <TodoItem item={item} />
           )}
           keyExtractor={item => String(item.id)}
         />
 
-        <KeyboardAvoidingView style={styles.footer} behavior='padding' keyboardVerticalOffset={10} >
-          <TextInput placeholder='Add item' style={styles.newTodoInput} />
-          <TouchableOpacity style={styles.addButton} onPress={() => {} }>
+        <KeyboardAvoidingView 
+          style={styles.footer} 
+          behavior='padding' 
+          keyboardVerticalOffset={10} 
+        >
+          <TextInput 
+            placeholder='Add item' 
+            value={todoText}
+            onChangeText={(text) => setTodoText(text)} 
+            style={styles.newTodoInput} 
+          />
+          <TouchableOpacity style={styles.addButton} onPress={() => {addTodo()} }>
             <Ionicons name='add' size={24} color={'#ffffff'} />
           </TouchableOpacity>
         </KeyboardAvoidingView>
