@@ -14,7 +14,9 @@ type TodoType = {
 export default function Index() {
 
   const [todos, setTodos] = useState<TodoType[]>([]);
+  const [oldTodos, setOldTodos] = useState<TodoType[]>([]);
   const [todoText, setTodoText] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     const getTodos = async () => {
@@ -22,6 +24,7 @@ export default function Index() {
         const todos = await AsyncStorage.getItem('my-todo');
         if (todos !== null) {
           setTodos(JSON.parse(todos));
+          setOldTodos(JSON.parse(todos));
         }
       } catch (error) {
         console.log(error);
@@ -38,11 +41,12 @@ export default function Index() {
         isDone: false,
       };
 
-      todos.push(newTodo);
-      setTodos(todos);
+      oldTodos.push(newTodo);
+      setOldTodos(oldTodos);
       await AsyncStorage.setItem('my-todo', JSON.stringify(todos));
       setTodoText('');
       Keyboard.dismiss();
+      onSearch(searchQuery);
     } catch (error) {
       console.log(error);
     }
@@ -52,6 +56,8 @@ export default function Index() {
     try {
       const newTodos = todos.filter((todo) => todo.id !== id);
       setTodos(newTodos);
+      const newOldTodos = oldTodos.filter((todo) => todo.id !== id);
+      setOldTodos(newOldTodos);
       await AsyncStorage.setItem('my-todo', JSON.stringify(newTodos));
     } catch (error) {
       console.log(error);
@@ -67,11 +73,23 @@ export default function Index() {
         return todo;
       });
       setTodos(newTodos);
+      setOldTodos(newTodos);
       await AsyncStorage.setItem('my-todo', JSON.stringify(newTodos));
     } catch (error) {
       console.log(error);
     }
   }
+
+  const onSearch = (query: string) => {
+    if (query === "") {
+      setTodos(oldTodos);
+    } else {
+      const filteredTodos = oldTodos.filter((todo) => todo.title.toLowerCase().includes(query.toLowerCase()));
+      setTodos(filteredTodos);
+    }
+  }
+
+  useEffect(() => {onSearch(searchQuery)}, [searchQuery]);
 
   return (
     <SafeAreaProvider>
@@ -90,7 +108,7 @@ export default function Index() {
 
         <View style={styles.searchBar}>
           <Ionicons name='search' size={24} color={'#333'}/>
-          <TextInput placeholder='Search' style={styles.searchInput} clearButtonMode='always'/>
+          <TextInput placeholder='Search' style={styles.searchInput} value={searchQuery} onChangeText={(text) => setSearchQuery(text)} clearButtonMode='always'/>
         </View>
 
         <FlatList
